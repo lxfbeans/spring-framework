@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.core.codec;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 
 import org.springframework.lang.Nullable;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Constants and convenience methods for working with hints.
@@ -34,17 +35,15 @@ public abstract class Hints {
 
 	/**
 	 * Name of hint exposing a prefix to use for correlating log messages.
-	 * @since 5.1
 	 */
 	public static final String LOG_PREFIX_HINT = Log.class.getName() + ".PREFIX";
 
 	/**
-	 * Name of hint for a preferred {@link Log logger} to use. This can be used
-	 * by a composite encoder (e.g. multipart requests) to control or suppress
-	 * logging by individual part encoders.
-	 * @since 5.1
+	 * Name of boolean hint whether to avoid logging data either because it's
+	 * potentially sensitive, or because it has been logged by a composite
+	 * encoder, e.g. for multipart requests.
 	 */
-	public static final String LOGGER_HINT = Log.class.getName();
+	public static final String SUPPRESS_LOGGING_HINT = Log.class.getName() + ".SUPPRESS_LOGGING";
 
 
 	/**
@@ -91,17 +90,16 @@ public abstract class Hints {
 	 * @return the log prefix
 	 */
 	public static String getLogPrefix(@Nullable Map<String, Object> hints) {
-		return hints != null ? (String) hints.getOrDefault(LOG_PREFIX_HINT, "") : "";
+		return (hints != null ? (String) hints.getOrDefault(LOG_PREFIX_HINT, "") : "");
 	}
 
 	/**
-	 * Obtain the hint {@link #LOGGER_HINT}, if present, or the given logger.
-	 * @param hints the hints passed to the encode method
-	 * @param defaultLogger the logger to return if a hint is not found
-	 * @return the logger to use
+	 * Whether to suppress logging based on the hint {@link #SUPPRESS_LOGGING_HINT}.
+	 * @param hints the hints map
+	 * @return whether logging of data is allowed
 	 */
-	public static Log getLoggerOrDefault(@Nullable Map<String, Object> hints, Log defaultLogger) {
-		return hints != null ? (Log) hints.getOrDefault(LOGGER_HINT, defaultLogger) : defaultLogger;
+	public static boolean isLoggingSuppressed(@Nullable Map<String, Object> hints) {
+		return (hints != null && (boolean) hints.getOrDefault(SUPPRESS_LOGGING_HINT, false));
 	}
 
 	/**
@@ -122,7 +120,7 @@ public abstract class Hints {
 			return hints2;
 		}
 		else {
-			Map<String, Object> result = new HashMap<>(hints1.size() + hints2.size());
+			Map<String, Object> result = CollectionUtils.newHashMap(hints1.size() + hints2.size());
 			result.putAll(hints1);
 			result.putAll(hints2);
 			return result;
@@ -143,7 +141,7 @@ public abstract class Hints {
 			return Collections.singletonMap(hintName, hintValue);
 		}
 		else {
-			Map<String, Object> result = new HashMap<>(hints.size() + 1);
+			Map<String, Object> result = CollectionUtils.newHashMap(hints.size() + 1);
 			result.putAll(hints);
 			result.put(hintName, hintValue);
 			return result;

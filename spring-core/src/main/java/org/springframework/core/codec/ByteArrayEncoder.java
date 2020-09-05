@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.springframework.core.codec;
 
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -44,7 +43,7 @@ public class ByteArrayEncoder extends AbstractEncoder<byte[]> {
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		Class<?> clazz = elementType.resolve(Object.class);
+		Class<?> clazz = elementType.toClass();
 		return super.canEncode(elementType, mimeType) && byte[].class.isAssignableFrom(clazz);
 	}
 
@@ -53,15 +52,21 @@ public class ByteArrayEncoder extends AbstractEncoder<byte[]> {
 			DataBufferFactory bufferFactory, ResolvableType elementType, @Nullable MimeType mimeType,
 			@Nullable Map<String, Object> hints) {
 
-		return Flux.from(inputStream).map(bytes -> {
-			DataBuffer dataBuffer = bufferFactory.wrap(bytes);
-			Log theLogger = Hints.getLoggerOrDefault(hints, logger);
-			if (theLogger.isDebugEnabled()) {
-				theLogger.debug(Hints.getLogPrefix(hints) +
-						"Writing " + dataBuffer.readableByteCount() + " bytes");
-			}
-			return dataBuffer;
-		});
+		// Use (byte[] bytes) for Eclipse
+		return Flux.from(inputStream).map((byte[] bytes) ->
+				encodeValue(bytes, bufferFactory, elementType, mimeType, hints));
+	}
+
+	@Override
+	public DataBuffer encodeValue(byte[] bytes, DataBufferFactory bufferFactory,
+			ResolvableType valueType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
+
+		DataBuffer dataBuffer = bufferFactory.wrap(bytes);
+		if (logger.isDebugEnabled() && !Hints.isLoggingSuppressed(hints)) {
+			String logPrefix = Hints.getLogPrefix(hints);
+			logger.debug(logPrefix + "Writing " + dataBuffer.readableByteCount() + " bytes");
+		}
+		return dataBuffer;
 	}
 
 }
